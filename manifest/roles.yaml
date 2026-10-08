@@ -1,0 +1,15 @@
+version: 1
+roles:
+  - id: backend
+    description: 后端研发规范、API、数据库、Java/Python 与评审代理
+    resources:
+      knowledge:
+        - common
+        - api
+        - database
+        - java
+        - python
+        - third-party
+      skills:
+        - rd
+      agents: []

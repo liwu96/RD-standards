@@ -86,7 +86,7 @@ public enum ErrorCode {
     FORBIDDEN_RESOURCE("A0301", "无权操作该资源"),
     NOT_FOUND("A0400", "资源不存在"),
     CONFLICT("A0500", "记录已存在"),
-    LOCK_VERSION_CONFLICT("A0501", "数据已被修改，请刷新后重试"),
+    VERSION_CONFLICT("A0501", "数据已被修改，请刷新后重试"),
     RATE_LIMITED("A0700", "请求过于频繁，请稍后再试"),
     INTERNAL_ERROR("B0001", "服务开小差了，请稍后再试"),
     DB_ERROR("B0100", "数据服务异常"),
@@ -111,7 +111,7 @@ class ErrorCode(str, Enum):
     FORBIDDEN_RESOURCE = "A0301"
     NOT_FOUND = "A0400"
     CONFLICT = "A0500"
-    LOCK_VERSION_CONFLICT = "A0501"
+    VERSION_CONFLICT = "A0501"
     RATE_LIMITED = "A0700"
     INTERNAL_ERROR = "B0001"
     DB_ERROR = "B0100"

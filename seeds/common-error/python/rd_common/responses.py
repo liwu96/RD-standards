@@ -1,14 +1,15 @@
 """统一响应包 envelope 构造器。
 
 结构见 rules/api/api-request-response.md §2.1：
-{code, message, data, requestId, serverTime}；失败时 data 为 null
-（A0100 的字段级详情使用 data.details 结构）。
+{code, message, data, requestId, serverTime}；一般失败时 data 为 null
+（A0100 可使用 data.details 返回字段级详情）。
 """
 
 from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Any
+from uuid import uuid4
 
 from .errors import DEFAULT_MESSAGES, ErrorCode
 
@@ -17,13 +18,20 @@ def _now_rfc3339() -> str:
     return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
 
 
+def _request_id(request_id: str | None) -> str:
+    """Return a stable request ID for envelopes built outside a middleware."""
+    if request_id and request_id.strip():
+        return request_id
+    return str(uuid4())
+
+
 def success(data: Any = None, request_id: str | None = None) -> dict[str, Any]:
     """成功响应：code="0"。"""
     return {
         "code": ErrorCode.OK.value,
         "message": "success",
         "data": data,
-        "requestId": request_id,
+        "requestId": _request_id(request_id),
         "serverTime": _now_rfc3339(),
     }
 
@@ -49,11 +57,11 @@ def error(
     request_id: str | None = None,
 ) -> dict[str, Any]:
     """失败响应：data 通常为 None；传 details 时包装为 {"details": [...]}（A0100）。"""
-    data = {"details": details} if details else None
+    data = {"details": details} if details is not None else None
     return {
         "code": error_code.value,
         "message": message or DEFAULT_MESSAGES[error_code],
         "data": data,
-        "requestId": request_id,
+        "requestId": _request_id(request_id),
         "serverTime": _now_rfc3339(),
     }

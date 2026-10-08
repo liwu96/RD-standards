@@ -34,7 +34,7 @@ metadata:
 - [ ] 资源复数名词、小写、连字符；版本在路径 `/api/v1/...`
 - [ ] 方法语义正确（GET 无副作用；更新优先 PATCH）
 - [ ] 非 CRUD 动作用动词子路径 `POST /api/v1/orders/{id}/cancel`
-- [ ] 命名矩阵：JSON/query 为 `lowerCamelCase`，Java 属性同名零转换，Python snake_case + pydantic to_camel 别名
+- [ ] 命名矩阵：JSON/query 为 `lowerCamelCase`；Java 遵循 Java Bean 布尔命名并在需要时显式映射；Python snake_case + pydantic to_camel 别名
 
 ### 3. 定义出入参
 
@@ -42,9 +42,9 @@ metadata:
 
 - [ ] 入参 Schema（Java Bean Validation / Python pydantic）逐字段标注：必填、类型、范围、示例
 - [ ] 分页 `page`/`pageSize`（≤100）；排序 `sort` 白名单校验
-- [ ] 写操作带 `idempotencyKey` 或 `requestId` 去重
+- [ ] 写操作定义幂等策略：使用 `Idempotency-Key`（或请求体 `idempotencyKey`）并说明作用域、保存时长和重试行为；`requestId` 仅做链路追踪
 - [ ] 出参用统一 envelope `{code, message, data, requestId, serverTime}`；列表用 `{total, page, pageSize, list}`
-- [ ] 时间 RFC 3339、金额整数（分）、ID 字符串、布尔 `is_`/`has_` 前缀
+- [ ] 时间 RFC 3339、金额整数（分）、ID 字符串；协议布尔字段如 `isDeleted`/`hasStock`，Python/数据库用对应 snake_case，Java 布尔属性遵循本语言规范并显式映射
 - [ ] 敏感字段出参脱敏（`158****9119`）
 
 ### 4. 选定错误码

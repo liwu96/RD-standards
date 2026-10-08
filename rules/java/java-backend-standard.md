@@ -1,6 +1,6 @@
 # Java 后端开发规范
 
-> 依据：《阿里巴巴 Java 开发手册》1.3.0（全文提取见 `references/alibaba-java-manual-1.3.0.md`），结合团队工程实践整理。
+> 依据：《阿里巴巴 Java 开发手册》1.3.0（来源索引见 `references/README.md`；未授权全文不随库分发），结合团队工程实践整理。
 > 约束级别：【强制】违反会被代码评审打回；【推荐】应当遵守，特殊情况可说明后豁免；【参考】供决策时选择。
 > 本文件是手册的团队落地版，条目语义与手册保持一致；完整"说明/正例/反例"请查手册原文。
 
@@ -197,6 +197,6 @@
 
 1. 【推荐】JDK8+ 时间处理统一 `java.time`（`LocalDateTime`/`Instant`/`DateTimeFormatter`），禁止新增 `Date`/`Calendar`/`SimpleDateFormat` 代码。
 2. 【推荐】优先 Stream/Optional 表达清晰的管道与空值语义，但不允许在循环外滥用嵌套 Stream 导致可读性下降。
-3. 【推荐】接口返回统一使用团队 Response envelope（见 `rules/api/api-request-response.md`），JSON 序列化默认 lowerCamelCase，与协议同名零配置。
+3. 【推荐】接口返回统一使用团队 Response envelope（见 `rules/api/api-request-response.md`），JSON 序列化默认 lowerCamelCase；普通属性可与协议同名，Java 布尔属性若采用协议的 `is`/`has` 前缀则必须显式配置序列化映射。
 4. 【强制】新增代码必须通过团队 CI 中的静态检查（P3C-PMD / SpotBugs / Checkstyle），Blocker 级问题不允许合入。
 5. 【推荐】框架选型跟随团队基线（Spring Boot 2.7+/3.x、MyBatis-Plus 或 JPA 按项目约定），新项目不得引入功能重复的同类框架。

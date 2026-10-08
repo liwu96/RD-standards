@@ -39,7 +39,7 @@ metadata:
 - [ ] 异常：不被吞（空 catch/except）；分类处理；最外层转用户可读信息
 - [ ] 资源：流/连接关闭（try-with-resources / with）；线程池有界
 - [ ] 测试：核心增量逻辑有单测；用例独立、可重复、无外部依赖
-- [ ] 金额用整数（分）或 decimal，无 float/double 运算
+- [ ] 金额对外和落库按最小单位用整数（分）；需要小数精度的中间计算使用 `Decimal`；禁止 float/double 运算
 
 ## Java 专项（高频强制项）
 
@@ -54,7 +54,7 @@ metadata:
 
 ## Python 专项（高频强制项）
 
-- [ ] 导入用完整包路径（`import x` / `from x import y` 模块），无相对导入
+- [ ] 导入路径稳定且无通配符；入口/跨顶层包用绝对导入，同包内部相对导入保持一致；不依赖运行目录或手工修改 `sys.path`
 - [ ] 无裸 `except:`；`assert` 不用于校验外部参数（用 `raise ValueError`）
 - [ ] 默认参数无可变对象（`b=[]` → `b=None`）
 - [ ] 判 None 用 `is None`；容器判空用隐式假值（`if not users:`）

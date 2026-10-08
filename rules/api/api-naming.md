@@ -11,7 +11,7 @@
 - 【强制】资源名使用英文复数名词，见名知义，禁止拼音与英文混用（国际通用名词如 alipay、taobao 可视同英文）。
 
 ```
-正例：GET /api/v1/orders/{order_id}
+正例：GET /api/v1/orders/{orderId}
 反例：GET /api/v1/getOrderList          （动词 + 驼峰）
 反例：GET /api/v1/dingdan                （拼音）
 ```
@@ -23,7 +23,7 @@
 | 方法 | 语义 | 幂等 | 示例 |
 |---|---|---|---|
 | GET | 查询资源，无副作用 | 是 | `GET /api/v1/orders/{id}` |
-| POST | 创建资源 / 触发不幂等的动作 | 否 | `POST /api/v1/orders` |
+| POST | 创建资源 / 触发动作 | 默认否；通过 `Idempotency-Key` 可将一次创建或动作设计为幂等 | `POST /api/v1/orders` |
 | PUT | 全量更新资源 | 是 | `PUT /api/v1/orders/{id}` |
 | PATCH | 部分更新资源 | 是 | `PATCH /api/v1/orders/{id}` |
 | DELETE | 删除资源（团队默认为逻辑删除） | 是 | `DELETE /api/v1/orders/{id}` |
@@ -33,6 +33,7 @@
 ## 3. 路径与查询参数
 
 - 【强制】路径参数用于定位唯一资源，命名为 `{xxxId}` 形式：`/api/v1/users/{userId}/orders`。
+- 路径模板中的占位符是 OpenAPI 参数名，使用 `lowerCamelCase`；实际请求中的资源 ID 是值，不受占位符命名样式影响。
 - 【强制】查询参数（query）仅用于 GET 的过滤、排序、分页，禁止在 GET 中传 body。
 - 【强制】分页参数统一为 `page`（从 1 开始）与 `pageSize`（默认 20，最大 100）；排序参数统一为 `sort`，多个字段逗号分隔，字段名前加 `-` 表示倒序。
 - 【推荐】超过 2 个查询条件的接口，条件命名与 JSON 字段保持同名（见 §6 命名矩阵）。
@@ -65,19 +66,19 @@ POST /api/v1/users/batch-export        批量导出
 
 ## 6. 命名矩阵（重要）
 
-【强制】各层命名风格按下表执行，跨层转换由框架统一完成，禁止手写不一致的映射：
+【强制】各层命名风格按下表执行。协议层、代码层和数据库层允许使用各自惯用风格；风格不同处必须由序列化/ORM 显式映射，禁止依赖手写的零散转换或不一致命名：
 
 | 层 | 风格 | 示例 |
 |---|---|---|
 | URL 路径 | 小写 + 连字符 / 复数名词 | `/api/v1/order-items` |
 | JSON 字段（入参/出参）、query 参数 | `lowerCamelCase` | `orderStatus`, `createdAt`, `pageSize` |
 | 枚举传输值 | 全大写下划线字符串 | `"PAID"`, `"PENDING_REVIEW"` |
-| 布尔字段 | `is`/`has` 前缀 + 形容词 | `isDeleted`, `hasStock` |
-| Java 代码属性 | `lowerCamelCase`（与协议同名，零转换） | `orderStatus` |
-| Python 代码属性 | `snake_case`（pydantic `alias_generator=to_camel` + `populate_by_name=True` 负责协议转换） | `order_status` |
-| 数据库字段 | `snake_case`（ORM 驼峰映射，如 MyBatis `mapUnderscoreToCamelCase`） | `order_status` |
+| 布尔字段（协议） | 推荐 `is`/`has` 前缀 + 形容词 | `isDeleted`, `hasStock` |
+| Java 代码属性 | `lowerCamelCase`；布尔属性不强制 `is` 前缀，和协议名不一致时显式序列化映射 | `deleted`, `stockAvailable` |
+| Python 代码属性 | `snake_case`（pydantic `alias_generator=to_camel` + `populate_by_name=True` 负责协议转换） | `is_deleted`, `has_stock` |
+| 数据库字段 | `snake_case`（ORM 映射；是否字段通常用 `is_` 前缀） | `is_deleted`, `has_stock` |
 
-> 协议层统一 `lowerCamelCase` 的原因：与前端 JS/TS 生态及主流 API 惯例一致，Java 侧天然同名无需任何序列化配置；Python 侧由 pydantic 别名机制一次配置转换；数据库侧由 ORM 驼峰映射处理。跨语言/跨层的名称转换全部由框架承担，任何人不得手写映射。
+> 协议层统一 `lowerCamelCase` 的原因：与前端 JS/TS 生态及主流 API 惯例一致。Java、Python 和数据库保留各自语言/存储习惯，协议与内部属性的差异由序列化和 ORM 显式映射承担；禁止在业务代码中散落手写转换。
 
 ## 7. 其他约定
 

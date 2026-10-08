@@ -24,9 +24,9 @@ metadata:
 - [ ] 必备 `id` / `gmt_create` / `gmt_modified`（datetime）
 - [ ] InnoDB + utf8mb4；表名小写下划线、单数、见名知义 ≤32 字符、无保留字
 - [ ] 所有表和字段有 comment；"是否"字段 `is_xxx unsigned tinyint`
-- [ ] 类型：金额 `decimal`；字符串定长 `char`；varchar ≤5000，超长 text 拆扩展表；无 ENUM、无外键、无预留字段、无明文密码
+- [ ] 类型：货币金额按最小单位用整数（如 `amount_cents BIGINT`）；确需小数精度的非货币量用 `DECIMAL`；字符串定长 `char`；varchar ≤5000，超长 text 拆扩展表；无 ENUM、无外键、无预留字段、无明文密码
 - [ ] 预计 3 年内数据量；>500 万行的规划归档或分表方案（不用分区表）
-- [ ] 索引：命名 `pk_/uk_/idx_`；业务唯一字段建 `uk_`；单表 ≤5 个
+- [ ] 索引：命名 `pk_/uk_/idx_`；业务唯一字段建 `uk_`；逐条说明查询/唯一性用途、写入成本和无冗余，数量以实际 workload 与执行计划为准
 
 产出建表 SQL 模板：
 
@@ -35,7 +35,7 @@ CREATE TABLE `trade_order` (
   `id`            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
   `order_no`      VARCHAR(32)  NOT NULL COMMENT '业务单号',
   `order_status`  TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '状态:0待支付,1已支付,2已取消',
-  `amount_cents`  DECIMAL(12,2) NOT NULL DEFAULT 0 COMMENT '金额(分)',
+  `amount_cents`  BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '金额(分)',
   `is_deleted`    TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '逻辑删除:0否,1是',
   `gmt_create`    DATETIME NOT NULL COMMENT '创建时间',
   `gmt_modified`  DATETIME NOT NULL COMMENT '修改时间',
@@ -53,7 +53,7 @@ CREATE TABLE `trade_order` (
 SELECT * FROM information_schema.innodb_trx ORDER BY trx_started;
 ```
 
-   发现长事务先处理（kill 或等其结束）再执行 DDL。
+   发现长事务先确认连接归属、业务影响和是否可安全结束，优先等待自然结束或调整窗口。禁止应用或 AI 直接 `KILL` 会话；确需中止语句时优先由 DBA 按变更流程审批后执行 `KILL QUERY <thread_id>`，关闭连接（`KILL CONNECTION`）还会触发事务回滚，必须单独评估并记录会话 ID，再复查锁等待。
 2. **低峰执行**：与 DBA 确认窗口。
 3. **设等待上限**：`ALTER TABLE ... NOWAIT` / `WAIT n`，拿不到 MDL 立即放弃重试。
 

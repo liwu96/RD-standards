@@ -1,6 +1,6 @@
 # Python 后端开发规范
 
-> 依据：Google Python 风格指南·语言规范中文版（全文提取见 `references/google-python-styleguide-language-rules.md`），结合团队工程实践整理。
+> 依据：Google Python 风格指南·语言规范中文版（来源索引见 `references/README.md`；未授权全文不随库分发），结合团队工程实践整理。
 > 约束级别：【强制】/【推荐】/【参考】。语言规范条目忠实于 Google 指南的"决定"部分；工程实践部分为团队补充。
 
 ## 一、语言规范（源自 Google 风格指南）
@@ -19,23 +19,18 @@ def do_put(self):  # WSGI 接口名, 所以 pylint: disable=invalid-name
 
 ### 2. 导入（import）
 
-- 【强制】只用 `import x` 导入包和模块，禁止 `from x import 函数或类`（以下例外）：
-  - `from x import y`：x 是包前缀、y 是模块名（不含前缀）；
-  - `from x import y as z`：解决重名或过长名称；
-  - `import y as z`：仅限标准公认缩写（如 `np` 代表 numpy）。
-- 【强制】禁止相对导入（`from . import x`），一律使用完整包名。
-- 【参考】静态分析相关模块（typing、collections.abc、typing_extensions）允许例外。
+- 【强制】导入使用明确的模块路径，禁止通配符导入；`import package.module` 与 `from package.module import Name` 均可，按可读性和依赖边界选择。
+- 【强制】跨顶层包和应用入口优先使用绝对导入；同一包内部允许显式相对导入（如 `from .foo import Bar`、`from ..shared import value`），同一项目保持一致，不得依赖运行目录或手工修改 `sys.path`。
+- 【参考】静态分析相关模块（typing、collections.abc、typing_extensions）允许按项目约定直接导入名称。
 - 【强制】导入顺序：标准库 → 三方库 → 本项目，组间空行（isort/ruff-isort 自动处理）。
 
 ### 3. 包
 
-- 【强制】使用完整包路径导入每个模块，不依赖 `sys.path` 巧合：
+- 【强制】导入必须在包边界内稳定解析，不依赖当前工作目录、运行脚本目录或手工修改 `sys.path`。应用入口和跨顶层包使用绝对导入；同包内部可用显式相对导入：
 
 ```python
-# 正确
-from doctor.who import jodie
-# 错误：导入结果取决于外部 sys.path
-import jodie
+from myapp.domain import orders       # 绝对导入
+from .serializers import OrderSchema  # 同包相对导入
 ```
 
 ### 4. 异常
@@ -184,7 +179,7 @@ project/
 
 ### 24. 异常与错误码
 
-- 【强制】业务错误抛自定义异常（继承业务 `BaseError`，含 `ErrorCode` 枚举，见 `rules/api/status-codes.md`），由统一异常处理器转 Response envelope；禁止在业务代码中直接拼 dict 返回错误。
+- 【强制】业务错误抛自定义异常并携带可映射的 `ErrorCode`（见 `rules/api/status-codes.md`），由统一异常处理器转 Response envelope；若项目已提供共享 `BaseError`，业务异常应继承它，否则继承项目已有的领域异常或合适的内置异常。禁止假设所有项目都存在 `BaseError`，也禁止在业务代码中直接拼 dict 返回错误。
 - 【强制】后台线程/任务最外层必须兜底捕获并记录日志，防止静默失败。
 
 ### 25. 日志

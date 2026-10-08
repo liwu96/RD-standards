@@ -9,7 +9,7 @@
 
 - 【强制】`Content-Type: application/json; charset=utf-8`（文件上传除外，使用 `multipart/form-data`）。
 - 【强制】鉴权头使用 `Authorization: Bearer <token>`；签名场景的 app key 等业务头统一加 `X-` 前缀。
-- 【推荐】调用方生成 `X-Request-Id`（UUID），服务端未收到时自行生成并原样回传，用于全链路追踪。
+- 【推荐】调用方生成 `X-Request-Id`（UUID），服务端未收到时自行生成并原样回传，用于全链路追踪。`requestId` 只用于关联一次请求及其日志，不承担写请求去重；重试可以有新的 `requestId`。
 - 【强制】禁止在 URL query 中传递 token、密码、手机号等敏感信息（会被网关/访问日志留存）。
 
 ### 1.2 Body 字段
@@ -20,7 +20,7 @@
   - 字符串长度、数值范围、枚举合法性；
   - 分页参数 `pageSize` 上限 100，防止一次拉全量打爆内存；
   - 排序字段白名单校验，禁止直接拼接 `order by`（SQL 注入）。
-- 【强制】写操作接口必须考虑幂等：至少支持客户端传入 `requestId`/`idempotencyKey`，服务端按 key 去重。
+- 【强制】写操作接口必须考虑幂等：支持客户端传入 `Idempotency-Key` 请求头，或请求体中的 `idempotencyKey`。客户端对同一业务操作重试时复用同一 key；服务端按接口、调用方和 key 的约定范围保存结果并去重。`requestId`/`X-Request-Id` 是链路追踪标识，不能替代幂等 key。
 - 【推荐】入参对象超过 5 个字段的，定义为独立 DTO/Schema 对象，禁止用 `Map`/`dict` 裸传（对应 Java 手册"超过 2 个参数的查询封装，禁止使用 Map 传输"）。
 
 ### 1.3 分页与过滤
@@ -48,12 +48,11 @@
 |---|---|---|
 | code | string | 业务状态码，`"0"` 成功，非 `"0"` 见错误码枚举（A/B/C 五位错误码） |
 | message | string | 面向调用方的提示信息；错误场景给出**可读、可行动**的描述，禁止直接输出堆栈/内部异常类名 |
-| data | object/null | 业务数据；无数据返回 `null` 或 `{}`，全团队统一一种（本规范定为 `null`） |
-| requestId | string | 链路追踪 ID，与请求头 `X-Request-Id` 对应 |
+| data | object/null | 业务数据；成功无数据和一般失败返回 `null`；A0100 参数校验失败可用 `data.details` 返回字段级错误 |
+| requestId | string | 链路追踪 ID，与请求头 `X-Request-Id` 对应；仅用于关联本次请求，不用于幂等去重 |
 | serverTime | string | 服务端时间，RFC 3339 格式 |
 
-- 【强制】失败场景 `data` 必须为 `null`，禁止"半成功"部分数据。
-- 【强制】错误详情需要携带字段级信息时放入 `data.details`（如参数校验错误列表），结构由错误码规范定义。
+- 【强制】失败场景不得返回半成功业务数据；一般失败 `data` 为 `null`，A0100 参数校验失败允许仅返回 `data.details` 字段级错误列表。
 
 ### 2.2 列表响应
 

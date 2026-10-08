@@ -26,14 +26,21 @@
 |---|---|---|
 | "应该怎么做"的知识/约束 | `rules/<领域>/` | 长期有效的规则，读的 |
 | "反复执行的动作+步骤+卡点" | `skills/rd/<name>/SKILL.md` | 有流程、有通过/打回标准 |
-| 评审角色（给 AI 子代理或专人） | `agents/<name>.md` | 独立人格化的评审视角 |
+| 评审角色（给 AI 子代理或专人） | `agents/<name>.yaml` | TeamAI canonical agent，含 name/description/instructions |
 | 文档骨架（ADR/方案/OpenAPI） | `templates/` | 填空即用的模板 |
 | 可直接引用的基线代码 | `seeds/` | 新项目拷入即用的种子实现 |
 | 支撑规范的原始材料 | `references/` | 溯源用，只读 |
 
 ## 源材料与许可
 
-`references/` 的来源与许可说明见 [`references/README.md`](./references/README.md)。组织结构参考 [teamai-template](https://github.com/affaan-m/everything-claude-code)（MIT），未直接复制其内容；`skills/rd/tdd-workflow` 改编自 [obra/superpowers](https://github.com/obra/superpowers) 的 test-driven-development skill（MIT）。引用的外部材料版权归原作者所有。
+`references/` 的来源与许可说明见 [`references/README.md`](./references/README.md) 和 [`ATTRIBUTION.md`](./ATTRIBUTION.md)。仓库组织结构参考 [teamai-hub/teamai-template](https://github.com/teamai-hub/teamai-template)；本仓库只保留已核对许可的改编内容。`skills/rd/tdd-workflow` 改编自 [obra/superpowers](https://github.com/obra/superpowers) 的 test-driven-development skill（MIT）；部分评审素材参考 [everything-claude-code](https://github.com/affaan-m/everything-claude-code)（MIT）。引用的外部材料版权归原作者所有，未经许可的全文不应提交到 `references/`。
+
+## TeamAI 资源约定
+
+- 代理定义使用 TeamAI canonical YAML：`agents/<name>.yaml` 必须包含 `name`、`description`、`instructions`；修改代理时同步检查 `manifest/roles.yaml` 的命名空间映射。
+- `teamai init <repo-url> --role backend`、`teamai pull` 和 `teamai doctor` 是本仓库的最小引导流程；真实环境变量与密钥不得写入 Git。
+- OpenAPI 模板中的响应 envelope、写操作幂等键和环境 server 变量是可复制的基线；例外必须在 PR 描述中说明。
+- 修改 `references/` 前先核对来源、再分发许可和是否包含敏感内容；优先提交索引、摘要或可公开链接。
 
 ## 季度治理
 

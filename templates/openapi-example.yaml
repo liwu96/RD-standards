@@ -5,6 +5,7 @@
 #          rules/api/api-request-response.md（envelope/分页/脱敏）、
 #          rules/api/status-codes.md（错误码）。
 # 新接口照抄本文件的结构与命名，替换业务字段即可。
+# 发布契约时由部署配置替换 servers 变量；不要把 token、密码或真实域名密钥写进文件。
 
 openapi: 3.0.3
 info:
@@ -19,10 +20,16 @@ info:
     - 错误：HTTP 码 + 业务码（"0" 成功 / A 用户端 / B 系统端 / C 三方）
 
 servers:
-  - url: https://api.example.com
-    description: 预发
-  - url: https://api.example.com
-    description: 生产
+  # API_HOST 由部署环境注入；这里的 enum 防止把未登记环境发布出去。
+  - url: https://{apiHost}
+    description: 目标环境（由 API_HOST/部署配置渲染）
+    variables:
+      apiHost:
+        default: staging-api.example.com
+        enum:
+          - staging-api.example.com
+          - api.example.com
+        description: 预发或生产 API host；禁止在仓库写入访问凭据
 
 security:
   - bearerAuth: []
@@ -81,11 +88,7 @@ paths:
       summary: 创建订单（幂等）
       tags: [order]
       parameters:
-        - name: Idempotency-Key
-          in: header
-          required: true
-          description: 写操作幂等键，重复提交返回首次结果
-          schema: { type: string, maxLength: 64 }
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -118,6 +121,8 @@ paths:
     patch:
       summary: 部分更新（只传变更字段，禁止大而全更新）
       tags: [order]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -134,6 +139,8 @@ paths:
     delete:
       summary: 删除订单（团队默认逻辑删除 isDeleted=1）
       tags: [order]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: 成功
@@ -148,6 +155,7 @@ paths:
       tags: [order]
       parameters:
         - $ref: '#/components/parameters/OrderId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -188,7 +196,18 @@ components:
       in: path
       required: true
       schema: { type: string, pattern: '^[0-9]+$' }
-      description: 路径参数定位唯一资源，命名为 {xxx_id}
+      description: 路径参数定位唯一资源，命名与 URL 占位符保持 lowerCamelCase（如 {orderId}）
+
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: 所有写操作必填；相同 key 在有效期内必须返回首次请求的结果，不得重复产生副作用
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 64
+        pattern: '^[A-Za-z0-9._:-]+$'
 
   responses:
     InvalidParam:
@@ -292,7 +311,7 @@ components:
     # ---------- envelope 复用结构 ----------
     OrderEnvelope:
       type: object
-      required: [code, message]
+      required: [code, message, data, requestId, serverTime]
       properties:
         code: { type: string, example: '0' }
         message: { type: string, example: success }
@@ -302,15 +321,17 @@ components:
 
     OrderListEnvelope:
       type: object
+      required: [code, message, data, requestId, serverTime]
       properties:
         code: { type: string, example: '0' }
         message: { type: string }
         data:
           type: object
+          required: [total, page, pageSize, list]
           properties:
-            total: { type: integer }
-            page: { type: integer }
-            pageSize: { type: integer }
+            total: { type: integer, minimum: 0 }
+            page: { type: integer, minimum: 1 }
+            pageSize: { type: integer, minimum: 1, maximum: 100 }
             list:
               type: array
               items: { $ref: '#/components/schemas/Order' }
@@ -319,6 +340,7 @@ components:
 
     EmptyEnvelope:
       type: object
+      required: [code, message, data, requestId, serverTime]
       properties:
         code: { type: string, example: '0' }
         message: { type: string }
@@ -328,7 +350,7 @@ components:
 
     ErrorEnvelope:
       type: object
-      required: [code, message]
+      required: [code, message, data, requestId, serverTime]
       properties:
         code:
           type: string

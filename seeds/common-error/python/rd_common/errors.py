@@ -111,10 +111,10 @@ HTTP_STATUS: dict[ErrorCode, int] = {
 }
 
 
-class BusinessError(Exception):
-    """业务异常：携带 ErrorCode，由统一异常处理器转为 Response envelope。
+class BaseError(Exception):
+    """业务异常基类，由统一异常处理器转为 Response envelope。
 
-    用法：raise BusinessError(ErrorCode.NOT_FOUND, message="订单不存在")
+    用法：raise BaseError(ErrorCode.NOT_FOUND, message="订单不存在")
     message 面向最终用户；排查信息通过日志 + requestId 关联，禁止放入异常消息。
     details 用于字段级错误（如 A0100 的 [{"field": ..., "reason": ...}]）。
     """
@@ -129,3 +129,13 @@ class BusinessError(Exception):
         self.message = message or DEFAULT_MESSAGES[error_code]
         self.details = details
         super().__init__(f"{error_code.value}: {self.message}")
+
+    @property
+    def code(self) -> ErrorCode:
+        """兼容常见的 BaseError.code 访问方式。"""
+        return self.error_code
+
+
+# Keep the original public name as an alias so existing integrations continue
+# to be caught by handlers registered for BaseError.
+BusinessError = BaseError

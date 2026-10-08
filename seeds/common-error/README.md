@@ -11,14 +11,14 @@ seeds/common-error/
 │   └── GlobalExceptionHandler.java  # Spring 全局异常处理（示例）
 └── python/rd_common/
     ├── __init__.py
-    ├── errors.py                    # ErrorCode 枚举 + BusinessError
+    ├── errors.py                    # ErrorCode 枚举 + BaseError（BusinessError 兼容别名）
     ├── responses.py                 # envelope 构造器
     └── handlers.py                  # FastAPI 异常处理器注册（示例）
 ```
 
 ## 接入方式
 
-- **Java**：将 `com/rd/common/error` 拷入公共模块（改包名为 `com.<公司>.common.error`），Maven 坐标与版本规则遵循 `rules/java/java-backend-standard.md` §13；协议为 lowerCamelCase，与 Java 属性同名，无需任何 Jackson 命名策略配置。
+- **Java**：将 `com/rd/common/error` 拷入公共模块（改包名为 `com.<公司>.common.error`），Maven 坐标与版本规则遵循 `rules/java/java-backend-standard.md` §13；协议为 lowerCamelCase，与 Java 属性同名，无需任何 Jackson 命名策略配置。种子按 JDK 8 / Spring Boot 2.7（`javax.servlet`、`javax.validation`）编写；使用 Spring Boot 3 时，将这两个包名整体替换为 `jakarta.servlet`、`jakarta.validation`。
 - **Python**：将 `rd_common` 拷入项目 `src/` 或发内部包；FastAPI 项目在入口调用 `register_exception_handlers(app)`；业务模型的 pydantic 基类统一配置 `alias_generator=to_camel`，保证出参 lowerCamelCase。
 
 ## 新增错误码流程
