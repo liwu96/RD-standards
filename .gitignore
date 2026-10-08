@@ -35,7 +35,7 @@ dist/
 *.egg-info/
 
 
-.idea
+.idea/
 # Public source indexes are tracked; private/full-text copies stay local.
 references/local/
 references/*.local.*
