@@ -9,6 +9,7 @@ RD-Standards contains original team guidance plus adaptations and summaries of p
 | Review-agent patterns | [affaan-m/everything-claude-code](https://github.com/affaan-m/everything-claude-code) | MIT | Review-agent structure and selected engineering guidance, rewritten for this repository |
 | Java guidance | [Alibaba Java Coding Guidelines](https://github.com/alibaba/p3c) | See upstream terms | Team summary and examples only; the upstream manual is not bundled |
 | Python guidance | [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html) | Google documentation terms | Team summary and examples only; no full-text copy |
+| FastAPI schema guidance | [Dify API Schema Guide](https://github.com/langgenius/dify/blob/main/api/controllers/API_SCHEMA_GUIDE.md) | Public guide; concepts summarized, no source text or Dify-specific implementation copied | Pydantic as the schema source, query/body separation, explicit response serialization, and OpenAPI verification |
 | Database guidance | [MySQL documentation](https://dev.mysql.com/doc/) and cited cloud-provider guidance | See each upstream site | Team summary and operational checklist only |
 
 The repository's own original additions are offered under the MIT License in [`LICENSE`](./LICENSE), subject to the upstream notices and restrictions above. A source with a different license remains under that license; attribution does not relicense it.

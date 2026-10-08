@@ -47,6 +47,14 @@ metadata:
 - [ ] 时间 RFC 3339、金额整数（分）、ID 字符串；协议布尔字段如 `isDeleted`/`hasStock`，Python/数据库用对应 snake_case，Java 布尔属性遵循本语言规范并显式映射
 - [ ] 敏感字段出参脱敏（`158****9119`）
 
+#### Python / FastAPI 走查
+
+- [ ] 请求体和 GET 查询参数分别定义 Pydantic Schema：请求体绑定 `Body` 模型，过滤/排序/分页绑定 `Query` 模型；GET 不使用请求体承载查询条件。
+- [ ] 同一 Schema 同时驱动运行时校验、OpenAPI 文档和序列化；禁止新增与 Schema 重复维护的手写字段字典或 marshalling 结构。
+- [ ] 结构化接口在路由声明 `response_model`（或框架等价 Schema），声明的是最终统一 envelope；响应来自 ORM/领域对象时使用项目统一序列化 helper，并显式处理 `from_attributes`、JSON 模式和对外 alias。
+- [ ] Schema 与 DB/领域对象默认使用 snake_case；有协议差异时使用显式 alias/mapping，禁止在业务代码散落手写字段转换。
+- [ ] 服务层返回 `None` 时先映射为约定的 404/业务异常，再做响应 Schema 校验；采用 `204 No Content` 时不返回 envelope、字典或其他响应 body。
+
 ### 4. 选定错误码
 
 按 `rules/api/status-codes.md`：
@@ -60,6 +68,16 @@ metadata:
 
 - [ ] 更新 OpenAPI/接口文档，与代码同步提交
 - [ ] 不兼容变更（删字段/改类型/改语义）必须升版本 `/api/v2`；新增可选字段视为兼容
+
+#### FastAPI / OpenAPI 生成验证
+
+对 FastAPI 项目使用仓库现有的测试和启动入口生成 `app.openapi()`（命令按项目实际脚本调整），不得手工编辑生成的 OpenAPI 文件。至少检查：
+
+- [ ] GET 参数均为 `in: query`；没有请求体的 GET 不出现 `requestBody`。
+- [ ] 请求体只出现在代码明确声明 Body Schema 的接口；Schema 中的必填、范围、枚举与文档一致。
+- [ ] 结构化响应引用预期的 envelope/`*Response` Schema，公开字段使用协议 lowerCamelCase，不泄露内部 snake_case 或 validation alias。
+- [ ] 使用 `204 No Content` 的响应没有响应 body 或响应 Schema；默认 200 + envelope 的接口保持既有 `data` 结构。
+- [ ] 生成的契约变更有对应的 Schema/路由测试；共享或下游文档引用生成结果时记录生成所依据的提交版本。
 
 ## 产出格式
 
@@ -77,5 +95,6 @@ metadata:
 
 - GET 修改数据；URL 含动词驼峰；JSON 字段非 lowerCamelCase
 - 出入参无校验；分页无上限
+- FastAPI 的 GET 把查询参数放入 request body；结构化响应缺少 `response_model` 或等价 Schema；204 响应仍返回 body
 - 200 + 错误码组合；message 暴露堆栈/表名/SQL
 - 新错误码未登记；敏感字段未脱敏

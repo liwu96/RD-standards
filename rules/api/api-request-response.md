@@ -84,6 +84,12 @@
 - 【强制】接口变更必须同步更新接口文档（OpenAPI/Swagger 或团队文档平台），文档与代码不一致视为缺陷。
 - 【参考】提供契约测试（Pact 等）保障服务间接口兼容。
 
+### 3.1 框架落地约束（Python/FastAPI）
+
+- 【强制】FastAPI 路由必须把请求体、查询参数和结构化响应绑定到代码中的 Pydantic Schema；`response_model`（或项目等价机制）应声明最终统一 envelope，OpenAPI 由路由与 Schema 生成，禁止另维护一份手写契约。
+- 【强制】GET 查询参数必须生成 `in: query`，没有请求体的 GET 不得在 OpenAPI 出现 `requestBody`；请求体只在接口明确声明 Body Schema 时出现。
+- 【强制】若接口契约采用 HTTP `204 No Content`，不得返回 envelope 或其他响应 body；默认的 200 + envelope 约定仍按本规范执行。
+
 ## 4. 异常与错误返回
 
 - 【强制】业务异常返回统一 envelope + 对应错误码，HTTP 状态码按下表（详见《状态码与错误码规范》）：

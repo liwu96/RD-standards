@@ -1,6 +1,7 @@
 # Python 后端开发规范
 
 > 依据：Google Python 风格指南·语言规范中文版（来源索引见 `references/README.md`；未授权全文不随库分发），结合团队工程实践整理。
+> FastAPI Schema 与 OpenAPI 契约部分参考 [Dify API Schema Guide](https://github.com/langgenius/dify/blob/main/api/controllers/API_SCHEMA_GUIDE.md)，仅吸收 Pydantic 模型、显式序列化和契约验证原则，不引入其 Flask-RESTX 实现或产品专属协议。
 > 约束级别：【强制】/【推荐】/【参考】。语言规范条目忠实于 Google 指南的"决定"部分；工程实践部分为团队补充。
 
 ## 一、语言规范（源自 Google 风格指南）
@@ -175,7 +176,12 @@ project/
 ### 23. 数据校验与序列化
 
 - 【强制】对外出入参统一 pydantic（FastAPI 天然集成），Schema 命名 `XxxCreateRequest` / `XxxResponse` / `XxxItem`。
-- 【强制】所有外部输入（HTTP、MQ 消息、三方返回）先经 Schema 校验再进入业务；Schema 属性与 DB 字段同名 snake_case（禁止手工改名），对外序列化经 to_camel 别名输出 lowerCamelCase。
+- 【强制】所有外部输入（HTTP、MQ 消息、三方返回）先经 Schema 校验再进入业务；同一个 Schema 应同时作为运行时校验、OpenAPI 文档和序列化契约的单一来源，禁止再维护一份不一致的手写字段字典。
+- 【强制】FastAPI 的请求体和查询参数必须使用不同的 Schema：请求体使用 `Body` 模型，GET 的过滤、排序、分页使用 `Query` 模型并从 query 参数绑定；不得用 GET 请求体承载查询条件。生成的 OpenAPI 必须把查询字段标为 `in: query`，只在接口确实有请求体时生成 `requestBody`。
+- 【强制】结构化响应必须在路由声明 `response_model`（或项目框架的等价响应 Schema），并与统一响应 envelope 对齐。不得直接把 ORM 对象或未经 Schema 校验的裸 `dict` 作为稳定 API 契约返回；手工序列化时先通过响应 Schema 校验对象属性，再用项目统一 helper 输出 JSON（Pydantic v2 可采用 `from_attributes=True` + `model_dump(mode="json", by_alias=True)`，旧版本通过兼容 helper 封装）。
+- 【强制】服务层可能返回 `None` 时，先转换为约定的资源不存在/业务异常，再进入响应 Schema 校验，避免把正常缺失误报为 500 或响应校验错误。
+- 【强制】Schema 属性和 DB/领域对象默认保持 snake_case；协议字段与内部字段不一致时，必须用 Pydantic 的显式 alias 或 ORM 映射声明输入/输出名称，禁止在业务代码中散落手工转换。对外序列化统一经 `to_camel` 别名输出 lowerCamelCase。
+- 【强制】若接口契约采用 HTTP `204 No Content`，路由不得声明会生成响应体的 `response_model`，也不得返回 envelope、字典或其他 body；使用框架规定的空响应写法。继续采用本规范默认的 200 + envelope 的接口，不得为了省略 `data` 擅自改成 204。
 
 ### 24. 异常与错误码
 
